@@ -1,15 +1,35 @@
 {
-    "version" : 2,
-    "builes" : [
-        {
-            "src": "server.js",
-            "user": "@now/node"
-        }
+    "version": 2,
+    "builds": [
+      {
+        "src": "server.js",
+        "use": "@vercel/node"
+      },
+      {
+        "src": "routes/*.js",
+        "use": "@vercel/node"
+      }
     ],
     "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "server.js"
-        }
-    ]
-}
+      {
+        "src": "/api/admin/(.*)",
+        "dest": "/routes/adminRoutes.js"
+      },
+      {
+        "src": "/api/login/(.*)",
+        "dest": "/routes/loginRoutes.js"
+      },
+      {
+        "src": "/api/user/(.*)",
+        "dest": "/routes/userRoutes.js"
+      }
+    ],
+    "env": {
+      "DATABASE_HOST": "sql12.freesqldatabase.com",
+      "DATABASE_USER": "sql12731445",
+      "DATABASE_PASSWORD": "rXgB3MXFEQ",
+      "DATABASE": "sql12731445",
+      "DATABASE_PORT": "3306"
+    }
+  }
+  
