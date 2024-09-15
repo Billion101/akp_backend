@@ -1,0 +1,15 @@
+{
+    "version" : 2,
+    "builes" : [
+        {
+            "src": "server.js",
+            "user": "@now/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "server.js"
+        }
+    ]
+}
