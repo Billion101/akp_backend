@@ -2,7 +2,7 @@ const express = require('express');
 const { addUser, getUser, deleteUser, updateUser } = require('../controllers/admin_controller/ad_mannageuser');
 const { addAdminDay, getAdminDay, deleteAdminDay, verifyAdminPassword } = require('../controllers/admin_controller/ad_home');
 const verifyToken = require('../middlewares/verifyToken');
-const { addAdminEntry, getAdminEntries, updateAdminEntry, deleteAdminCode } = require('../controllers/admin_controller/ad_addata');
+const { addAdminEntry, getAdminEntries, updateAdminEntry, deleteAdminCode, deleteAdminEntry } = require('../controllers/admin_controller/ad_addata');
 
 const router = express.Router();
 //admin mannage user
@@ -19,7 +19,8 @@ router.post('/verifyAdminPassword', verifyToken, verifyAdminPassword);
 router.post('/addAdminEntry', verifyToken, addAdminEntry);
 router.get('/getAdminEntries/:dayId',verifyToken, getAdminEntries);
 router.put('/updateAdminEntry/:id',verifyToken, updateAdminEntry);
-router.delete('/deleteAdminCode/:id', verifyToken, deleteAdminCode)
+router.delete('/deleteAdminCode/:id', verifyToken, deleteAdminCode);
+router.delete('/deleteAdminEntry/:id',verifyToken, deleteAdminEntry);
 
 
 module.exports = router;

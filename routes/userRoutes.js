@@ -2,7 +2,7 @@ const express = require('express');
 
 const verifyToken = require('../middlewares/verifyToken');
 const { getUserDay,addUserDay, deleteUserDay } = require('../controllers/user_controller/user_home');
-const  { getUserEntries, getAdminCode, addUserCode, addUserEntry, deleteUserCode, updateUserEntry } = require('../controllers/user_controller/user_addata')
+const  { getUserEntries, getAdminCode, addUserCode, addUserEntry, deleteUserCode, updateUserEntry, deleteUserEntry } = require('../controllers/user_controller/user_addata')
 const router = express.Router();
 //home user
 router.get('/getUserDay', verifyToken, getUserDay);
@@ -15,6 +15,7 @@ router.post('/addUserCode',verifyToken,addUserCode);
 router.put('/updateUserEntry/:id',verifyToken,updateUserEntry);
 router.delete('/deleteUserCode/:entryId/:code',verifyToken,deleteUserCode);
 router.get('/getAdminCode/:code', verifyToken,getAdminCode);
+router.delete('/deleteUserEntry/:id',verifyToken,deleteUserEntry);
 
 
 module.exports = router;

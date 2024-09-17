@@ -1,3 +1,4 @@
+const res = require('express/lib/response');
 const db = require('../../config/db');
 
 const getUserEntries = (req, res) => {
@@ -209,5 +210,54 @@ const getAdminCode =(req, res) => {
         res.json(results[0]);
     });
 }
+const deleteUserEntry = (req, res) => {
+    const entryId = req.params.id;
+    // const userId = req.user.id;
+    
+    // Start a transaction
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error('Transaction error:', err);
+            return res.status(500).json({ message: 'Error starting transaction', error: err.message });
+        }
 
-module.exports = {getUserEntries,getAdminCode,addUserCode,addUserEntry,deleteUserCode,updateUserEntry}
+        // First, delete associated codes
+        db.query('DELETE FROM user_code WHERE entry_id = ?', [entryId], (err) => {
+            if (err) {
+                console.error('Error deleting codes:', err);
+                return db.rollback(() => {
+                    res.status(500).json({ message: 'Error deleting associated codes', error: err.message });
+                });
+            }
+
+            // Then, delete the entry itself
+            db.query('DELETE FROM user_entrie WHERE id = ? ', [entryId], (err, result) => {
+                if (err) {
+                    console.error('Error deleting entry:', err);
+                    return db.rollback(() => {
+                        res.status(500).json({ message: 'Error deleting entry', error: err.message });
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return db.rollback(() => {
+                        res.status(403).json({ message: 'You are not authorized to delete this entry' });
+                    });
+                }
+
+                // Commit the transaction
+                db.commit((err) => {
+                    if (err) {
+                        console.error('Commit error:', err);
+                        return db.rollback(() => {
+                            res.status(500).json({ message: 'Error committing transaction', error: err.message });
+                        });
+                    }
+                    res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+                });
+            });
+        });
+    });
+}
+
+module.exports = {getUserEntries,getAdminCode,addUserCode,addUserEntry,deleteUserCode,updateUserEntry,deleteUserEntry}

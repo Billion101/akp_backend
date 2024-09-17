@@ -1,3 +1,4 @@
+const res = require('express/lib/response');
 const db = require('../../config/db');
 
 const addAdminEntry = (req, res) => {
@@ -165,4 +166,43 @@ const deleteAdminCode = (req, res) => {
     });
 };
 
-module.exports = {  addAdminEntry,deleteAdminCode,updateAdminEntry, getAdminEntries};
+const deleteAdminEntry = (req, res) =>{
+    const entryId = req.params.id;
+    
+    // Start a transaction
+    db.beginTransaction((err) => {
+        if (err) {
+            return res.status(500).json({ message: 'Error starting transaction', error: err });
+        }
+
+        // First, delete associated codes
+        db.query('DELETE FROM admin_codes WHERE entry_id = ?', [entryId], (err) => {
+            if (err) {
+                return db.rollback(() => {
+                    res.status(500).json({ message: 'Error deleting associated codes', error: err });
+                });
+            }
+
+            // Then, delete the entry itself
+            db.query('DELETE FROM admin_entries WHERE id = ?', [entryId], (err) => {
+                if (err) {
+                    return db.rollback(() => {
+                        res.status(500).json({ message: 'Error deleting entry', error: err });
+                    });
+                }
+
+                // Commit the transaction
+                db.commit((err) => {
+                    if (err) {
+                        return db.rollback(() => {
+                            res.status(500).json({ message: 'Error committing transaction', error: err });
+                        });
+                    }
+                    res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+                });
+            });
+        });
+    });
+}
+
+module.exports = {  addAdminEntry,deleteAdminCode,updateAdminEntry, getAdminEntries,deleteAdminEntry};
