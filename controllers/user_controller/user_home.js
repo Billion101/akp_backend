@@ -57,27 +57,4 @@ const deleteUserDay = (req, res) => {
     });
 }
 
-const getNotiFormAdmin = (req, res) => {
-    // Log to see if req.user exists
-    console.log(req.user);  // Ensure req.user is populated
-
-    // Use the user ID from the request (assuming it's set by some middleware)
-    const userId = req.user ? req.user.id : null;
-    
-    if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-    }
-
-    const query = 'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC';
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            console.error('Error fetching notifications:', err);  // Log the exact error
-            return res.status(500).json({ message: 'Error fetching notifications' });
-        }
-        res.json(results);
-    });
-};
-
-
-
-module.exports = {getUserDay,addUserDay,deleteUserDay,getNotiFormAdmin};
+module.exports = {getUserDay,addUserDay,deleteUserDay};

@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/getUserDay', verifyToken, getUserDay);
 router.post('/addUserDay', verifyToken, addUserDay);
 router.delete('/deleteUserDay/:id', verifyToken, deleteUserDay);
-router.get('/getNotiFormAdmin', verifyToken, getNotiFormAdmin);
+// router.get('/getNotiFormAdmin', verifyToken, getNotiFormAdmin);
 
 //add data user
 router.get('/getUserEntries/:dayId',verifyToken, getUserEntries);

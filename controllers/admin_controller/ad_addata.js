@@ -204,59 +204,6 @@ const deleteAdminEntry = (req, res) =>{
         });
     });
 }
-// Function to get user list
-const getUserList = (req, res) => {
-    
-    const query = 'SELECT id, username FROM login WHERE role = "user"';
-    db.query(query, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error fetching users' });
-        }
-        res.json(results);
-    });
-};
-
-// Function to send data notification to a user
-const sendDataNotiUser = (req, res) => {
-    const { userId, entryData } = req.body;
-
-  // Validate input
-  if (!userId || !entryData) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  // Check if the user exists
-  db.query('SELECT * FROM login WHERE id = ?', [userId], (err, users) => {
-    if (err) {
-      console.error('Error querying user:', err);
-      return res.status(500).json({ error: 'Database query failed' });
-    }
-
-    if (users.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Save notification to database
-    db.query(
-      'INSERT INTO notifications (user_id, entry_data) VALUES (?, ?)',
-      [userId, JSON.stringify(entryData)],
-      (err, result) => {
-        if (err) {
-          console.error('Error inserting notification:', err);
-          return res.status(500).json({ error: 'Failed to save notification' });
-        }
-
-        // Placeholder for sending notification logic (e.g., push notification)
-        console.log(`Notification sent to user ${userId}`);
-
-        res.status(200).json({
-          message: 'Notification sent successfully',
-          notificationId: result.insertId
-        });
-      }
-    );
-  });
-};
 
 
-module.exports = {  addAdminEntry,deleteAdminCode,updateAdminEntry, getAdminEntries,deleteAdminEntry,getUserList,sendDataNotiUser};
+module.exports = {  addAdminEntry,deleteAdminCode,updateAdminEntry, getAdminEntries,deleteAdminEntry};

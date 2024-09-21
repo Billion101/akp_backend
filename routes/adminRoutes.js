@@ -21,8 +21,8 @@ router.get('/getAdminEntries/:dayId',verifyToken, getAdminEntries);
 router.put('/updateAdminEntry/:id',verifyToken, updateAdminEntry);
 router.delete('/deleteAdminCode/:id', verifyToken, deleteAdminCode);
 router.delete('/deleteAdminEntry/:id',verifyToken, deleteAdminEntry);
-router.get('/getUserList', verifyToken,getUserList);
-router.post('/sentDataNotiUser', verifyToken,sendDataNotiUser);
+// router.get('/getUserList', verifyToken,getUserList);
+// router.post('/sentDataNotiUser', verifyToken,sendDataNotiUser);
 
 
 module.exports = router;
