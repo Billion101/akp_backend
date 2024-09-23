@@ -57,4 +57,35 @@ const deleteUserDay = (req, res) => {
     });
 }
 
-module.exports = {getUserDay,addUserDay,deleteUserDay};
+const totalUserPrice = (req, res) => {
+    const { dayId } = req.params; // Make sure dayId is being received
+
+    // Check if dayId is defined
+    if (!dayId) {
+        return res.status(400).json({ error: 'dayId is required' });
+    }
+
+    const query = `
+        SELECT SUM(total_price) AS total_sum 
+        FROM user_entrie
+        WHERE day_id = ?
+    `;
+
+    db.execute(query, [dayId], (error, results) => {
+        if (error) {
+            console.error('Database query error:', error);
+            return res.status(500).json({ error: 'Database query failed' });
+        }
+
+        // If no entries found, set total_sum to '0.00'
+        const totalPrice = results[0]?.total_sum || '0';
+
+        // Format the total price to match your desired output
+        const formattedTotalPrice = totalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        // Send the response with formatted total price
+        return res.json({ total_sum: formattedTotalPrice });
+    });
+};
+
+module.exports = {getUserDay,addUserDay,deleteUserDay,totalUserPrice};

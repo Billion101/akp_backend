@@ -58,4 +58,31 @@ const verifyAdminPassword = (req, res) => {
     });
 };
 
-module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword};
+const totalAdminPrice = (req, res) => {
+    const dayId = req.params.dayId; // Extract dayId from request parameters
+
+    // Query to sum the total price for the given dayId
+    const query = `
+        SELECT SUM(total_price) AS total_sum 
+        FROM admin_entries 
+        WHERE day_id = ?
+    `;
+
+    db.query(query, [dayId], (error, results) => {
+        if (error) {
+            console.error('Error fetching total price:', error);
+            return res.status(500).json({ message: 'Internal Server Error' });
+        }
+
+        // If no entries found, set total_sum to '0.00'
+        const totalPrice = results[0]?.total_sum || '0';
+
+        // Format the total price to match your desired output
+        const formattedTotalPrice = totalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        // Send the response with formatted total price
+        return res.json({ total_sum: formattedTotalPrice });
+    });
+};
+
+module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice};

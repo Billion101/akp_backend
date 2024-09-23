@@ -1,5 +1,6 @@
 const res = require('express/lib/response');
 const db = require('../../config/db');
+const req = require('express/lib/request');
 
 const addAdminEntry = (req, res) => {
     const { dayId, userName, phoneNumber, totalPrice, totalWeight, totalM3, codes } = req.body;
@@ -204,6 +205,7 @@ const deleteAdminEntry = (req, res) =>{
         });
     });
 }
+
 
 
 module.exports = {  addAdminEntry,deleteAdminCode,updateAdminEntry, getAdminEntries,deleteAdminEntry};
