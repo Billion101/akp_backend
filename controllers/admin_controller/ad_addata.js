@@ -18,10 +18,14 @@ const addAdminEntry = (req, res) => {
 
         const entryId = results.insertId;
 
-        // Insert the codes associated with this entry, handling missing weight and m3 fields
-        const codeInserts = codes.map((code) => {
-            const weight = code.weight || ''; // Use null if weight is not provided
-            const m3 = code.m3 || '';         // Use null if m3 is not provided
+        // Filter out duplicate codes by checking if they already exist in the admin_codes table
+        const uniqueCodes = codes.filter((code, index, self) =>
+            index === self.findIndex((c) => c.code === code.code)
+        );
+
+        const codeInserts = uniqueCodes.map((code) => {
+            const weight = code.weight || null;
+            const m3 = code.m3 || null;
 
             return new Promise((resolve, reject) => {
                 db.query(
@@ -48,6 +52,7 @@ const addAdminEntry = (req, res) => {
             });
     });
 };
+
 
 
 
@@ -118,8 +123,13 @@ const updateAdminEntry = (req, res) => {
                     return res.status(500).json({ success: false, error: 'Failed to update entry' });
                 }
 
+                // Filter out duplicate codes by checking if they already exist in the admin_codes table
+                const uniqueCodes = codes.filter((code, index, self) =>
+                    index === self.findIndex((c) => c.code === code.code)
+                );
+
                 // Insert the new codes with the updated color
-                const codeInserts = codes.map((code) => {
+                const codeInserts = uniqueCodes.map((code) => {
                     return new Promise((resolve, reject) => {
                         db.query(
                             'INSERT INTO admin_codes (entry_id, code, weight, m3, color) VALUES (?, ?, ?, ?, ?)',
@@ -147,6 +157,7 @@ const updateAdminEntry = (req, res) => {
         }
     );
 };
+
 
 const deleteAdminCode = (req, res) => {
     const codeId = req.params.id;

@@ -197,19 +197,25 @@ const deleteUserCode =  (req, res) => {
     );
 }
 
-const getAdminCode =(req, res) => {
+const getAdminCode = (req, res) => {
     const code = req.params.code;
+
+    if (!code) {
+        return res.status(400).json({ error: 'Code parameter is missing' });
+    }
+
     db.query('SELECT weight, m3, color FROM admin_codes WHERE code = ?', [code], (err, results) => {
         if (err) {
-            console.error('Error fetching admin code data:', err);
-            return res.status(500).json({ error: 'Internal server error' });
+            console.error('Error fetching admin code data for code:', code, err);
+            return res.status(500).json({ error: 'Internal server error while fetching code data' });
         }
         if (results.length === 0) {
-            return res.status(404).json({ error: 'Code not found' });
+            return res.status(404).json({ error: `Code ${code} not found` });
         }
         res.json(results[0]);
     });
-}
+};
+
 const deleteUserEntry = (req, res) => {
     const entryId = req.params.id;
     // const userId = req.user.id;
