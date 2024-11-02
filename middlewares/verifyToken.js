@@ -10,6 +10,8 @@ const verifyToken = (req, res, next) => {
         if (err) return res.status(500).send('Failed to authenticate token');
         req.userId = decoded.id;
         req.role = decoded.role;
+        // Add this line to set req.user
+        req.user = { id: decoded.id, role: decoded.role };
         next();
     });
 };

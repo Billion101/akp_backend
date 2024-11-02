@@ -4,13 +4,18 @@ const bcrypt = require('bcrypt');
 
 // Add a day
 const addAdminDay = (req, res) => {
-    const { date } = req.body;
-    const sql = 'INSERT INTO admin_days (date) VALUES (?)';
-    db.query(sql, [date], (err, result) => {
+    const { date, title } = req.body;
+
+    // SQL query to insert date and title, if provided
+    const sql = 'INSERT INTO admin_days (date, title) VALUES (?, ?)';
+
+    // Use null if no title is provided
+    db.query(sql, [date, title || null], (err, result) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json({ dayId: result.insertId });
     });
 };
+
 
 // Get all days
 const getAdminDay = (req, res) => {
@@ -37,6 +42,26 @@ const deleteAdminDay = (req, res) => {
                 res.sendStatus(200);
             });
         });
+    });
+};
+// Edit a day
+const editAdminDay = (req, res) => {
+    const { id } = req.params;
+    const { title, date } = req.body;
+    
+    const sql = 'UPDATE admin_days SET title = ?, date = ? WHERE id = ?';
+    
+    db.query(sql, [title || null, date, id], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Day not found' });
+        }
+        
+        res.json({ success: true, message: 'Day updated successfully' });
     });
 };
 
@@ -85,4 +110,5 @@ const totalAdminPrice = (req, res) => {
     });
 };
 
-module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice};
+
+module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice,editAdminDay};

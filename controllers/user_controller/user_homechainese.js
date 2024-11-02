@@ -1,3 +1,4 @@
+const res = require('express/lib/response');
 const db = require('../../config/db');
 
 const getUserDay = (req, res) => {
@@ -87,5 +88,9 @@ const totalUserPrice = (req, res) => {
         return res.json({ total_sum: formattedTotalPrice });
     });
 };
+
+
+
+
 
 module.exports = {getUserDay,addUserDay,deleteUserDay,totalUserPrice};
