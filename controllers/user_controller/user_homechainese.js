@@ -57,7 +57,25 @@ const deleteUserDay = (req, res) => {
         });
     });
 }
-
+const editUserDay = (req, res) => {
+    const { id } = req.params;
+    const { date } = req.body;
+    
+    const sql = 'UPDATE user_day SET date = ? WHERE id = ?';
+    
+    db.query(sql, [date, id], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Day not found' });
+        }
+        
+        res.json({ success: true, message: 'Day updated successfully' });
+    });
+};
 const totalUserPrice = (req, res) => {
     const { dayId } = req.params; // Make sure dayId is being received
 
@@ -93,4 +111,4 @@ const totalUserPrice = (req, res) => {
 
 
 
-module.exports = {getUserDay,addUserDay,deleteUserDay,totalUserPrice};
+module.exports = {getUserDay,addUserDay,deleteUserDay,totalUserPrice,editUserDay};

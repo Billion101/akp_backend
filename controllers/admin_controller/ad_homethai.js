@@ -20,6 +20,25 @@ const getAdminThaiDay = (req, res) => {
         res.json(results);
     });
 };
+const editAdminThaiDay = (req, res) => {
+    const { id } = req.params;
+    const { date } = req.body;
+    
+    const sql = 'UPDATE admin_thaidays SET date = ? WHERE id = ?';
+    
+    db.query(sql, [date, id], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Day not found' });
+        }
+        
+        res.json({ success: true, message: 'Day updated successfully' });
+    });
+};
 
 // Delete a day
 const deleteAdminThaiDay = (req, res) => {
@@ -95,4 +114,4 @@ const totalAdminThaiPrices = (req, res) => {
     });
 };
 
-module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices};
+module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices,editAdminThaiDay};

@@ -1,17 +1,18 @@
 const express = require('express');
 
 const verifyToken = require('../middlewares/verifyToken');
-const { getUserDay,addUserDay, deleteUserDay, totalUserPrice} = require('../controllers/user_controller/user_homechainese');
+const { getUserDay,addUserDay, deleteUserDay, totalUserPrice, editUserDay} = require('../controllers/user_controller/user_homechainese');
 const  { getUserEntries, getAdminCode, addUserCode, addUserEntry, deleteUserCode, updateUserEntry, deleteUserEntry } = require('../controllers/user_controller/user_chainesedata');
 const { getUserThaiEntries, addUserThaiEntry, addUserThaiCode, updateUserThaiEntry, deleteUserThaiCode, getAdminThaiCode, deleteUserThaiEntry } = require('../controllers/user_controller/user_thaidata');
-const { getUserThaiDay, addUserThaiDay, deleteUserThaiDay, totalUserLaoPrice, totalUserThaiPrice } = require('../controllers/user_controller/user_homethai');
+const { getUserThaiDay, addUserThaiDay, deleteUserThaiDay, totalUserLaoPrice, totalUserThaiPrice, editUserThaiDay } = require('../controllers/user_controller/user_homethai');
 const { userNoti, userNotiThai } = require('../controllers/user_controller/user_noti');
 const router = express.Router();
-//home user
+//home chainese user
 router.get('/getUserDay', verifyToken, getUserDay);
 router.post('/addUserDay', verifyToken, addUserDay);
 router.delete('/deleteUserDay/:id', verifyToken, deleteUserDay);
 router.get('/totalUserPrice/:dayId',verifyToken,totalUserPrice);
+router.put('/editUserDay/:id',verifyToken,editUserDay);
 
 //notifications
 router.get('/notifications',verifyToken,userNoti);
@@ -23,6 +24,7 @@ router.post('/addUserthaiDay', verifyToken, addUserThaiDay);
 router.delete('/deleteUserthaiDay/:id', verifyToken, deleteUserThaiDay);
 router.get('/totalUserLaoPrice/:dayId',verifyToken,totalUserLaoPrice);
 router.get('/totalUserThaiPrice/:dayId',verifyToken,totalUserThaiPrice);
+router.put('/editUserThaiDay/:id',verifyToken,editUserThaiDay);
 //add chainese data user
 router.get('/getUserEntries/:dayId',verifyToken, getUserEntries);
 router.post('/addUserEntry', verifyToken, addUserEntry);

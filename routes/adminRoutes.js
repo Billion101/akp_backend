@@ -4,7 +4,7 @@ const { addAdminDay, getAdminDay, deleteAdminDay, verifyAdminPassword, totalAdmi
 const verifyToken = require('../middlewares/verifyToken');
 const { addAdminEntry, getAdminEntries, updateAdminEntry, deleteAdminCode, deleteAdminEntry, getUsersList } = require('../controllers/admin_controller/ad_chainesedata');
 const { addAdminThaiEntry, getAdminThaiEntries, updateAdminThaiEntry, deleteAdminThaiCode, deleteAdminThaiEntry } = require('../controllers/admin_controller/ad_thaidata');
-const { addAdminThaiDay, getAdminThaiDay, deleteAdminThaiDay, totalAdminLaoPrice, totalAdminThaiPrices } = require('../controllers/admin_controller/ad_homethai');
+const { addAdminThaiDay, getAdminThaiDay, deleteAdminThaiDay, totalAdminLaoPrice, totalAdminThaiPrices, editAdminThaiDay } = require('../controllers/admin_controller/ad_homethai');
 
 const router = express.Router();
 //admin mannage user
@@ -25,6 +25,7 @@ router.get('/getAdminThaiDay', verifyToken, getAdminThaiDay);
 router.delete('/deleteAdminThaiDay/:id', verifyToken, deleteAdminThaiDay);
 router.get('/totalAdminLaoPrice/:dayId', verifyToken,totalAdminLaoPrice);
 router.get('/totalAdminThaiPrice/:dayId', verifyToken,totalAdminThaiPrices);
+router.put('/editAdminThaiDay/:id',verifyToken,editAdminThaiDay)
 //chainese data
 router.post('/addAdminEntry', verifyToken, addAdminEntry);
 router.get('/getAdminEntries/:dayId',verifyToken, getAdminEntries);

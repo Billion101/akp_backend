@@ -57,7 +57,25 @@ const deleteUserThaiDay = (req, res) => {
         });
     });
 }
-
+const editUserThaiDay = (req, res) => {
+    const { id } = req.params;
+    const { date } = req.body;
+    
+    const sql = 'UPDATE user_thaiday SET date = ? WHERE id = ?';
+    
+    db.query(sql, [date, id], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Day not found' });
+        }
+        
+        res.json({ success: true, message: 'Day updated successfully' });
+    });
+};
 const totalUserLaoPrice = (req, res) => {
     const { dayId } = req.params; // Make sure dayId is being received
 
@@ -118,4 +136,4 @@ const totalUserThaiPrice = (req, res) => {
         return res.json({ total_sum: formattedTotalPrice });
     });
 };
-module.exports ={getUserThaiDay,addUserThaiDay,deleteUserThaiDay,totalUserLaoPrice,totalUserThaiPrice}
+module.exports ={getUserThaiDay,addUserThaiDay,deleteUserThaiDay,totalUserLaoPrice,totalUserThaiPrice,editUserThaiDay}
