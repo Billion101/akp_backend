@@ -44,7 +44,7 @@ const addUserThaiEntry = (req, res) => {
     const userId = req.userId;
 
     // Check if the dayId exists in user_days
-    const checkDayQuery = 'SELECT id FROM user_Thaiday WHERE id = ?';
+    const checkDayQuery = 'SELECT id FROM user_thaiday WHERE id = ?';
     db.query(checkDayQuery, [dayId], (err, dayResult) => {
         if (err) {
             console.error('Error checking dayId:', err);
@@ -53,7 +53,7 @@ const addUserThaiEntry = (req, res) => {
 
         if (dayResult.length === 0) {
             // If the dayId doesn't exist, insert a new one
-            const insertDayQuery = 'INSERT INTO user_Thaiday (date, user_id) VALUES (CURDATE(), ?)';
+            const insertDayQuery = 'INSERT INTO user_thaiday (date, user_id) VALUES (CURDATE(), ?)';
             db.query(insertDayQuery, [userId], (err, result) => {
                 if (err) {
                     console.error('Error inserting into user_day:', err);
