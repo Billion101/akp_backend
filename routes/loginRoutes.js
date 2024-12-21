@@ -11,22 +11,42 @@ const router = express.Router();
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    // Query to get user by username
+    if (!username || !password) {
+        console.error('Error: Missing username or password');
+        return res.status(400).send('Missing username or password');
+    }
+
     const query = 'SELECT id, role, password FROM login WHERE username = ?';
     db.query(query, [username], (err, result) => {
-        if (err) return res.status(500).send('Server error');
-        if (result.length === 0) return res.status(401).send('Invalid credentials');
+        if (err) {
+            console.error('Database Query Error:', err);
+            return res.status(500).send('Database server error');
+        }
+        if (result.length === 0) {
+            console.error('Error: Invalid credentials, no matching username');
+            return res.status(401).send('Invalid credentials');
+        }
 
         const user = result[0];
-        // Check if the provided password matches the hashed password in the database
         const passwordIsValid = bcrypt.compareSync(password, user.password);
-        if (!passwordIsValid) return res.status(401).send('Invalid credentials');
+        if (!passwordIsValid) {
+            console.error('Error: Invalid credentials, password mismatch');
+            return res.status(401).send('Invalid credentials');
+        }
 
-        // Generate a JWT token
-        const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({ token, role: user.role, id: user.id });
+        try {
+            const token = jwt.sign(
+                { id: user.id, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+            res.json({ token, role: user.role, id: user.id });
+        } catch (jwtError) {
+            console.error('JWT Generation Error:', jwtError);
+            return res.status(500).send('Token generation error');
+        }
     });
 });
+
 
 module.exports = router;
