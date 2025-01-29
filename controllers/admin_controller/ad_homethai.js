@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 
 // Add a day
 const addAdminThaiDay = (req, res) => {
-    const { date } = req.body;
-    const sql = 'INSERT INTO admin_thaidays (date) VALUES (?)';
-    db.query(sql, [date], (err, result) => {
+    const { date, title } = req.body;
+    const sql = 'INSERT INTO admin_thaidays (date, title) VALUES (?, ?)';
+    db.query(sql, [date, title || null], (err, result) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         res.json({ dayId: result.insertId });
     });
@@ -22,11 +22,11 @@ const getAdminThaiDay = (req, res) => {
 };
 const editAdminThaiDay = (req, res) => {
     const { id } = req.params;
-    const { date } = req.body;
+    const { title, date } = req.body;
     
-    const sql = 'UPDATE admin_thaidays SET date = ? WHERE id = ?';
+    const sql = 'UPDATE admin_thaidays SET title = ?, date = ? WHERE id = ?';
     
-    db.query(sql, [date, id], (err, result) => {
+    db.query(sql, [title || null, date, id], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Database error' });
