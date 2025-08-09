@@ -1,10 +1,10 @@
 const express = require('express');
 const { addUser, getUser, deleteUser, updateUser } = require('../controllers/admin_controller/ad_mannageuser');
-const { addAdminDay, getAdminDay, deleteAdminDay, verifyAdminPassword, totalAdminPrice, editAdminDay} = require('../controllers/admin_controller/ad_homechainese');
+const { addAdminDay, getAdminDay, deleteAdminDay, verifyAdminPassword, totalAdminPrice, editAdminDay, searchCHCode} = require('../controllers/admin_controller/ad_homechainese');
 const verifyToken = require('../middlewares/verifyToken');
 const { addAdminEntry, getAdminEntries, updateAdminEntry, deleteAdminCode, deleteAdminEntry, getUsersList } = require('../controllers/admin_controller/ad_chainesedata');
 const { addAdminThaiEntry, getAdminThaiEntries, updateAdminThaiEntry, deleteAdminThaiCode, deleteAdminThaiEntry } = require('../controllers/admin_controller/ad_thaidata');
-const { addAdminThaiDay, getAdminThaiDay, deleteAdminThaiDay, totalAdminLaoPrice, totalAdminThaiPrices, editAdminThaiDay } = require('../controllers/admin_controller/ad_homethai');
+const { addAdminThaiDay, getAdminThaiDay, deleteAdminThaiDay, totalAdminLaoPrice, totalAdminThaiPrices, editAdminThaiDay,searchTHCode} = require('../controllers/admin_controller/ad_homethai');
 
 const router = express.Router();
 //admin mannage user
@@ -19,13 +19,15 @@ router.delete('/deleteAdminDay/:id', verifyToken, deleteAdminDay);
 router.post('/verifyAdminPassword', verifyToken, verifyAdminPassword);
 router.get('/totalAdminPrice/:dayId', verifyToken,totalAdminPrice);
 router.put('/editAdminDay/:id',verifyToken,editAdminDay);
+router.get('/search-CHcode',verifyToken, searchCHCode);
 //home thai admin
 router.post('/addAdminThaiDay', verifyToken, addAdminThaiDay);
 router.get('/getAdminThaiDay', verifyToken, getAdminThaiDay);
 router.delete('/deleteAdminThaiDay/:id', verifyToken, deleteAdminThaiDay);
 router.get('/totalAdminLaoPrice/:dayId', verifyToken,totalAdminLaoPrice);
 router.get('/totalAdminThaiPrice/:dayId', verifyToken,totalAdminThaiPrices);
-router.put('/editAdminThaiDay/:id',verifyToken,editAdminThaiDay)
+router.put('/editAdminThaiDay/:id',verifyToken,editAdminThaiDay);
+router.get('/search-THcode',verifyToken, searchTHCode);
 //chainese data
 router.post('/addAdminEntry', verifyToken, addAdminEntry);
 router.get('/getAdminEntries/:dayId',verifyToken, getAdminEntries);

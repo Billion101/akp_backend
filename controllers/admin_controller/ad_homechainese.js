@@ -109,6 +109,37 @@ const totalAdminPrice = (req, res) => {
         return res.json({ total_sum: formattedTotalPrice });
     });
 };
+const searchCHCode = (req, res) => {
+  const { code } = req.query;
 
+  if (!code) {
+    return res.status(400).json({ error: 'Missing code parameter' });
+  }
 
-module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice,editAdminDay};
+  const query = `
+    SELECT 
+      ac.code,
+      ae.day_id,
+      ad.date,
+      ad.title
+    FROM admin_codes ac
+    JOIN admin_entries ae ON ac.entry_id = ae.id
+    JOIN admin_days ad ON ae.day_id = ad.id
+    WHERE ac.code = ?
+  `;
+
+  db.query(query, [code], (err, results) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Code not found' });
+    }
+
+    res.json(results[0]); // Or res.json(results) if multiple match
+  });
+};
+
+module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice,editAdminDay,searchCHCode};

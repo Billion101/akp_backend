@@ -112,6 +112,37 @@ const totalAdminThaiPrices = (req, res) => {
         // Send the response with formatted total price
         return res.json({ total_sum: formattedTotalPrice });
     });
+};const searchTHCode = (req, res) => {
+  const { code } = req.query;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Missing code parameter' });
+  }
+
+  const query = `
+    SELECT 
+      ac.code,
+      ae.day_id,
+      ad.date,
+      ad.title
+    FROM admin_thaicodes ac
+    JOIN admin_thaientries ae ON ac.entry_id = ae.id
+    JOIN admin_thaidays ad ON ae.day_id = ad.id
+    WHERE ac.code = ?
+  `;
+
+  db.query(query, [code], (err, results) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Code not found' });
+    }
+
+    res.json(results[0]); // Or res.json(results) if multiple match
+  });
 };
 
-module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices,editAdminThaiDay};
+module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices,editAdminThaiDay,searchTHCode};
