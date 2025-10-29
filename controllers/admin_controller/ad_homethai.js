@@ -144,5 +144,31 @@ const totalAdminThaiPrices = (req, res) => {
     res.json(results[0]); // Or res.json(results) if multiple match
   });
 };
+const totalAdminThaiCodes = (req, res) => {
+    const dayId = req.params.dayId; // Get dayId from URL
 
-module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices,editAdminThaiDay,searchTHCode};
+    // Query to count total codes for this day
+    const query = `
+        SELECT COUNT(admin_thaicodes.id) AS total_codes
+        FROM admin_thaicodes
+        JOIN admin_thaientries ON admin_thaientries.id = admin_thaicodes.entry_id
+        WHERE admin_thaientries.day_id = ?
+    `;
+
+    db.query(query, [dayId], (error, results) => {
+        if (error) {
+            console.error('Error fetching total codes:', error);
+            return res.status(500).json({ message: 'Internal Server Error' });
+        }
+
+        // If no results, set count = 0
+        const totalCodes = results[0]?.total_codes || 0;
+
+        // Send response in the desired format
+        return res.json({
+            day_id: Number(dayId),
+            total_codes: totalCodes
+        });
+    });
+};
+module.exports = {addAdminThaiDay, getAdminThaiDay,deleteAdminThaiDay,totalAdminLaoPrice,totalAdminThaiPrices,editAdminThaiDay,searchTHCode,totalAdminThaiCodes};

@@ -141,5 +141,32 @@ const searchCHCode = (req, res) => {
     res.json(results[0]); // Or res.json(results) if multiple match
   });
 };
+const totalAdminCodes = (req, res) => {
+    const dayId = req.params.dayId; // Get dayId from URL
 
-module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice,editAdminDay,searchCHCode};
+    // Query to count total codes for this day
+    const query = `
+        SELECT COUNT(admin_codes.id) AS total_codes
+        FROM admin_codes
+        JOIN admin_entries ON admin_entries.id = admin_codes.entry_id
+        WHERE admin_entries.day_id = ?
+    `;
+
+    db.query(query, [dayId], (error, results) => {
+        if (error) {
+            console.error('Error fetching total codes:', error);
+            return res.status(500).json({ message: 'Internal Server Error' });
+        }
+
+        // If no results, set count = 0
+        const totalCodes = results[0]?.total_codes || 0;
+
+        // Send response in the desired format
+        return res.json({
+            day_id: Number(dayId),
+            total_codes: totalCodes
+        });
+    });
+};
+
+module.exports = {addAdminDay, getAdminDay,deleteAdminDay, verifyAdminPassword,totalAdminPrice,editAdminDay,searchCHCode,totalAdminCodes};
