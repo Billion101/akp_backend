@@ -19,7 +19,7 @@ RUN npm ci --omit=dev
 COPY . .
 
 # Expose the port
-EXPOSE 3000
+EXPOSE 3001
 
 # Run with PM2 in no-daemon mode so Docker sees it as a foreground process
 # --no-daemon keeps the container alive
