@@ -1,38 +1,40 @@
 module.exports = {
   apps: [
     {
-      name: "mybackend",
+      name: "akp-backend",
       script: "./server.js",
-      
-      // --- High-Performance Cluster Topology ---
-      instances: 3,             // 3 instances leaves 1 vCPU core dedicated to your Database/OS
-      exec_mode: "cluster",     // Run in load-balanced cluster mode to maximize throughput
-      
-      // --- Memory Management for 16GB VPS ---
-      // 3 instances x 2G = 6GB max RAM allocation for the backend, leaving plenty for DB & Frontend
-      max_memory_restart: "2G", 
-      
-      // --- Production Stability Settings ---
-      watch: false,             // Set to false to prevent accidental restarts on your VPS
-      max_restarts: 15,         // Safeguard against infinite crash loops
-      restart_delay: 4000,      // 4-second buffer gives your local database time to breathe if it restarts
-      autorestart: true,
-      
-      // --- Environment Variables Configuration ---
-      // This combined object handles both your app data and Node performance optimization flags
+
+      // --- Cluster mode: 2 instances on a 4-core VPS ---
+      // Leaves 2 cores free for MySQL, MinIO, Dokploy, and the OS.
+      // Each instance handles requests independently (load balanced).
+      instances: 2,
+      exec_mode: "cluster",
+
+      // --- Memory limit per instance ---
+      // 2 instances x 1.5GB = 3GB max for backend
+      // Leaves ~13GB for DB (~3GB), MinIO (~512MB), frontend, Dokploy, and OS overhead
+      max_memory_restart: "1500M",
+
+      // --- Stability settings ---
+      watch: false,          // Never watch files inside Docker
+      autorestart: true,     // Auto-restart on crash
+      max_restarts: 15,      // Stop trying after 15 consecutive crashes (prevents CPU spin)
+      restart_delay: 4000,   // Wait 4s before restart — gives DB time to recover if it restarted
+      min_uptime: "10s",     // Only count as a crash if the process dies before 10s
+
+      // --- Node.js V8 tuning ---
       env: {
         NODE_ENV: "production",
-        UV_THREADPOOL_SIZE: 64,                    // Enhances internal Node.js background thread capacity
-        NODE_OPTIONS: "--max-old-space-size=2048", // Grants the V8 engine access to use up to 2GB of RAM
-        
-        // Your Original App Configurations
-        PORT: 3000,
-        DATABASE: "akp_db",
-        DATABASE_HOST: "187.77.131.4",
-        DATABASE_USER: "akp",
-        DATABASE_PASSWORD: "r7ZT4DWU6GP7ig9",
-        DATABASE_PORT: 3306,
-        JWT_SECRET: "707329d93a8fdc2557d3645edde98eed66cf77372a35f63276498df7c9455c1bc4981711a62e5cd2d7afae965e6bca3345ab5ceecf8aa93b740c002e923ae540"
+
+        // Each instance gets up to 1.5GB of V8 heap
+        NODE_OPTIONS: "--max-old-space-size=1536",
+
+        // Increase libuv thread pool for heavy I/O (DB queries, file ops)
+        // 4 threads per instance x 2 instances = 8 active threads
+        UV_THREADPOOL_SIZE: 16,
+
+        // All secret env vars (PORT, DATABASE_*, JWT_SECRET)
+        // are injected by Dokploy at runtime — NOT hardcoded here
       }
     }
   ]
