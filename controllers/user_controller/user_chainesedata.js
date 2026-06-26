@@ -114,67 +114,81 @@ const updateUserEntry = (req, res) => {
     // Convert totalPrice to a string and ensure it's not longer than 20 characters
     const updatedTotalPrice = totalPrice ? totalPrice.toString().slice(0, 20) : '';
 
-    // Start a transaction
-    db.beginTransaction((err) => {
+    db.getConnection((err, connection) => {
         if (err) {
-            console.error('Error starting transaction:', err);
+            console.error('Error getting connection from pool:', err);
             return res.status(500).send('Internal Server Error');
         }
 
-        // Update user_entrie table
-        db.query(
-            'UPDATE user_entrie SET user_name = ?, phone_number = ?, total_price = ?, total_weight = ?, total_m3 = ?  WHERE id = ? AND user_id = ?',
-            [userName, phoneNumber, updatedTotalPrice,totalWeight,totalM3, entryId, req.userId],
-            (err, result) => {
-                if (err) {
-                    return db.rollback(() => {
-                        console.error('Error updating user entry:', err);
-                        res.status(500).send('Internal Server Error');
-                    });
-                }
-                if (result.affectedRows === 0) {
-                    return db.rollback(() => {
-                        res.status(404).send('Entry not found or not authorized');
-                    });
-                }
+        // Start a transaction
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                console.error('Error starting transaction:', err);
+                return res.status(500).send('Internal Server Error');
+            }
 
-                // Delete existing codes for this entry
-                db.query('DELETE FROM user_code WHERE entry_id = ?', [entryId], (err) => {
+            // Update user_entrie table
+            connection.query(
+                'UPDATE user_entrie SET user_name = ?, phone_number = ?, total_price = ?, total_weight = ?, total_m3 = ?  WHERE id = ? AND user_id = ?',
+                [userName, phoneNumber, updatedTotalPrice,totalWeight,totalM3, entryId, req.userId],
+                (err, result) => {
                     if (err) {
-                        return db.rollback(() => {
-                            console.error('Error deleting existing codes:', err);
+                        return connection.rollback(() => {
+                            connection.release();
+                            console.error('Error updating user entry:', err);
                             res.status(500).send('Internal Server Error');
                         });
                     }
+                    if (result.affectedRows === 0) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(404).send('Entry not found or not authorized');
+                        });
+                    }
 
-                    // Insert new codes
-                    const codeValues = codes.map(code => [entryId, code.code, code.weight, code.m3]);
-                    db.query(
-                        'INSERT INTO user_code (entry_id, code, weight, m3) VALUES ?',
-                        [codeValues],
-                        (err) => {
-                            if (err) {
-                                return db.rollback(() => {
-                                    console.error('Error inserting new codes:', err);
-                                    res.status(500).send('Internal Server Error');
-                                });
-                            }
+                    // Delete existing codes for this entry
+                    connection.query('DELETE FROM user_code WHERE entry_id = ?', [entryId], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                console.error('Error deleting existing codes:', err);
+                                res.status(500).send('Internal Server Error');
+                            });
+                        }
 
-                            // Commit the transaction
-                            db.commit((err) => {
+                        // Insert new codes
+                        const codeValues = codes.map(code => [entryId, code.code, code.weight, code.m3]);
+                        connection.query(
+                            'INSERT INTO user_code (entry_id, code, weight, m3) VALUES ?',
+                            [codeValues],
+                            (err) => {
                                 if (err) {
-                                    return db.rollback(() => {
-                                        console.error('Error committing transaction:', err);
+                                    return connection.rollback(() => {
+                                        connection.release();
+                                        console.error('Error inserting new codes:', err);
                                         res.status(500).send('Internal Server Error');
                                     });
                                 }
-                                res.json({ message: 'User entry updated successfully!' });
-                            });
-                        }
-                    );
-                });
-            }
-        );
+
+                                // Commit the transaction
+                                connection.commit((err) => {
+                                    if (err) {
+                                        return connection.rollback(() => {
+                                            connection.release();
+                                            console.error('Error committing transaction:', err);
+                                            res.status(500).send('Internal Server Error');
+                                        });
+                                    }
+                                    connection.release();
+                                    res.json({ message: 'User entry updated successfully!' });
+                                });
+                            }
+                        );
+                    });
+                }
+            );
+        });
     });
 }
 
@@ -220,46 +234,59 @@ const deleteUserEntry = (req, res) => {
     const entryId = req.params.id;
     // const userId = req.user.id;
     
-    // Start a transaction
-    db.beginTransaction((err) => {
+    db.getConnection((err, connection) => {
         if (err) {
-            console.error('Transaction error:', err);
-            return res.status(500).json({ message: 'Error starting transaction', error: err.message });
+            console.error('Error getting connection from pool:', err);
+            return res.status(500).json({ message: 'Database connection error', error: err.message });
         }
 
-        // First, delete associated codes
-        db.query('DELETE FROM user_code WHERE entry_id = ?', [entryId], (err) => {
+        // Start a transaction
+        connection.beginTransaction((err) => {
             if (err) {
-                console.error('Error deleting codes:', err);
-                return db.rollback(() => {
-                    res.status(500).json({ message: 'Error deleting associated codes', error: err.message });
-                });
+                connection.release();
+                console.error('Transaction error:', err);
+                return res.status(500).json({ message: 'Error starting transaction', error: err.message });
             }
 
-            // Then, delete the entry itself
-            db.query('DELETE FROM user_entrie WHERE id = ? ', [entryId], (err, result) => {
+            // First, delete associated codes
+            connection.query('DELETE FROM user_code WHERE entry_id = ?', [entryId], (err) => {
                 if (err) {
-                    console.error('Error deleting entry:', err);
-                    return db.rollback(() => {
-                        res.status(500).json({ message: 'Error deleting entry', error: err.message });
+                    console.error('Error deleting codes:', err);
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(500).json({ message: 'Error deleting associated codes', error: err.message });
                     });
                 }
 
-                if (result.affectedRows === 0) {
-                    return db.rollback(() => {
-                        res.status(403).json({ message: 'You are not authorized to delete this entry' });
-                    });
-                }
-
-                // Commit the transaction
-                db.commit((err) => {
+                // Then, delete the entry itself
+                connection.query('DELETE FROM user_entrie WHERE id = ? ', [entryId], (err, result) => {
                     if (err) {
-                        console.error('Commit error:', err);
-                        return db.rollback(() => {
-                            res.status(500).json({ message: 'Error committing transaction', error: err.message });
+                        console.error('Error deleting entry:', err);
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ message: 'Error deleting entry', error: err.message });
                         });
                     }
-                    res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+
+                    if (result.affectedRows === 0) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(403).json({ message: 'You are not authorized to delete this entry' });
+                        });
+                    }
+
+                    // Commit the transaction
+                    connection.commit((err) => {
+                        if (err) {
+                            console.error('Commit error:', err);
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ message: 'Error committing transaction', error: err.message });
+                            });
+                        }
+                        connection.release();
+                        res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+                    });
                 });
             });
         });

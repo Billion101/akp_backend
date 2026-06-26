@@ -184,36 +184,48 @@ const deleteAdminCode = (req, res) => {
 const deleteAdminEntry = (req, res) =>{
     const entryId = req.params.id;
     
-    // Start a transaction
-    db.beginTransaction((err) => {
+    db.getConnection((err, connection) => {
         if (err) {
-            return res.status(500).json({ message: 'Error starting transaction', error: err });
+            console.error('Error getting connection from pool:', err);
+            return res.status(500).json({ message: 'Database connection error', error: err });
         }
 
-        // First, delete associated codes
-        db.query('DELETE FROM admin_codes WHERE entry_id = ?', [entryId], (err) => {
+        // Start a transaction
+        connection.beginTransaction((err) => {
             if (err) {
-                return db.rollback(() => {
-                    res.status(500).json({ message: 'Error deleting associated codes', error: err });
-                });
+                connection.release();
+                return res.status(500).json({ message: 'Error starting transaction', error: err });
             }
 
-            // Then, delete the entry itself
-            db.query('DELETE FROM admin_entries WHERE id = ?', [entryId], (err) => {
+            // First, delete associated codes
+            connection.query('DELETE FROM admin_codes WHERE entry_id = ?', [entryId], (err) => {
                 if (err) {
-                    return db.rollback(() => {
-                        res.status(500).json({ message: 'Error deleting entry', error: err });
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(500).json({ message: 'Error deleting associated codes', error: err });
                     });
                 }
 
-                // Commit the transaction
-                db.commit((err) => {
+                // Then, delete the entry itself
+                connection.query('DELETE FROM admin_entries WHERE id = ?', [entryId], (err) => {
                     if (err) {
-                        return db.rollback(() => {
-                            res.status(500).json({ message: 'Error committing transaction', error: err });
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ message: 'Error deleting entry', error: err });
                         });
                     }
-                    res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+
+                    // Commit the transaction
+                    connection.commit((err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ message: 'Error committing transaction', error: err });
+                            });
+                        }
+                        connection.release();
+                        res.status(200).json({ message: 'Entry and associated codes deleted successfully' });
+                    });
                 });
             });
         });

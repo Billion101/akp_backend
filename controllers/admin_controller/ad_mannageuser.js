@@ -72,53 +72,67 @@ const deleteUser = (req, res) => {
     ];
 
     // Start transaction
-    db.beginTransaction((transErr) => {
-        if (transErr) {
-            console.error('Transaction error:', transErr);
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error('Error getting connection from pool:', err);
             return res.status(500).json({ 
-                error: 'Transaction error', 
-                details: transErr.message 
+                error: 'Database connection error', 
+                details: err.message 
             });
         }
 
-        // Function to execute queries sequentially
-        const executeQuery = (index) => {
-            if (index >= queries.length) {
-                // All queries completed successfully, commit transaction
-                db.commit((commitErr) => {
-                    if (commitErr) {
-                        console.error('Commit error:', commitErr);
-                        return db.rollback(() => {
+        connection.beginTransaction((transErr) => {
+            if (transErr) {
+                console.error('Transaction error:', transErr);
+                connection.release();
+                return res.status(500).json({ 
+                    error: 'Transaction error', 
+                    details: transErr.message 
+                });
+            }
+
+            // Function to execute queries sequentially
+            const executeQuery = (index) => {
+                if (index >= queries.length) {
+                    // All queries completed successfully, commit transaction
+                    connection.commit((commitErr) => {
+                        if (commitErr) {
+                            console.error('Commit error:', commitErr);
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ 
+                                    error: 'Error committing transaction', 
+                                    details: commitErr.message 
+                                });
+                            });
+                        }
+                        connection.release();
+                        res.json({ message: 'User and all related data deleted successfully' });
+                    });
+                    return;
+                }
+
+                // Execute current query
+                connection.query(queries[index], [id], (queryErr, results) => {
+                    if (queryErr) {
+                        console.error(`Error in query ${index + 1}:`, queryErr);
+                        return connection.rollback(() => {
+                            connection.release();
                             res.status(500).json({ 
-                                error: 'Error committing transaction', 
-                                details: commitErr.message 
+                                error: `Error in deletion step ${index + 1}`, 
+                                details: queryErr.message 
                             });
                         });
                     }
-                    res.json({ message: 'User and all related data deleted successfully' });
+
+                    // Move to next query
+                    executeQuery(index + 1);
                 });
-                return;
-            }
+            };
 
-            // Execute current query
-            db.query(queries[index], [id], (queryErr, results) => {
-                if (queryErr) {
-                    console.error(`Error in query ${index + 1}:`, queryErr);
-                    return db.rollback(() => {
-                        res.status(500).json({ 
-                            error: `Error in deletion step ${index + 1}`, 
-                            details: queryErr.message 
-                        });
-                    });
-                }
-
-                // Move to next query
-                executeQuery(index + 1);
-            });
-        };
-
-        // Start executing queries
-        executeQuery(0);
+            // Start executing queries
+            executeQuery(0);
+        });
     });
 };
 

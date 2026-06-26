@@ -107,62 +107,77 @@ const updateUserThaiEntry = (req, res) => {
     const updatedTotalPrice = totalPrice ? totalPrice.toString().slice(0, 20) : '';
     const updatedTotalPriceThai = totalPriceThai ? totalPriceThai.toString().slice(0, 20) : '';
 
-    db.beginTransaction((err) => {
+    db.getConnection((err, connection) => {
         if (err) {
-            console.error('Error starting transaction:', err);
+            console.error('Error getting connection from pool:', err);
             return res.status(500).send('Internal Server Error');
         }
 
-        db.query(
-            'UPDATE user_thaientrie SET user_name = ?, phone_number = ?, total_price = ?, total_prices = ? WHERE id = ? AND user_id = ?',
-            [userName, phoneNumber, updatedTotalPrice, updatedTotalPriceThai, entryId, req.userId],
-            (err, result) => {
-                if (err) {
-                    return db.rollback(() => {
-                        console.error('Error updating user Thai entry:', err);
-                        res.status(500).send('Internal Server Error');
-                    });
-                }
-                if (result.affectedRows === 0) {
-                    return db.rollback(() => {
-                        res.status(404).send('Entry not found or not authorized');
-                    });
-                }
+        // Start a transaction
+        connection.beginTransaction((err) => {
+            if (err) {
+                connection.release();
+                console.error('Error starting transaction:', err);
+                return res.status(500).send('Internal Server Error');
+            }
 
-                db.query('DELETE FROM user_thaicode WHERE entry_id = ?', [entryId], (err) => {
+            connection.query(
+                'UPDATE user_thaientrie SET user_name = ?, phone_number = ?, total_price = ?, total_prices = ? WHERE id = ? AND user_id = ?',
+                [userName, phoneNumber, updatedTotalPrice, updatedTotalPriceThai, entryId, req.userId],
+                (err, result) => {
                     if (err) {
-                        return db.rollback(() => {
-                            console.error('Error deleting existing Thai codes:', err);
+                        return connection.rollback(() => {
+                            connection.release();
+                            console.error('Error updating user Thai entry:', err);
                             res.status(500).send('Internal Server Error');
                         });
                     }
+                    if (result.affectedRows === 0) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(404).send('Entry not found or not authorized');
+                        });
+                    }
 
-                    const codeValues = codes.map(code => [entryId, code.code, code.price]);
-                    db.query(
-                        'INSERT INTO user_thaicode (entry_id, code, price) VALUES ?',
-                        [codeValues],
-                        (err) => {
-                            if (err) {
-                                return db.rollback(() => {
-                                    console.error('Error inserting new Thai codes:', err);
-                                    res.status(500).send('Internal Server Error');
-                                });
-                            }
+                    connection.query('DELETE FROM user_thaicode WHERE entry_id = ?', [entryId], (err) => {
+                        if (err) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                console.error('Error deleting existing Thai codes:', err);
+                                res.status(500).send('Internal Server Error');
+                            });
+                        }
 
-                            db.commit((err) => {
+                        const codeValues = codes.map(code => [entryId, code.code, code.price]);
+                        connection.query(
+                            'INSERT INTO user_thaicode (entry_id, code, price) VALUES ?',
+                            [codeValues],
+                            (err) => {
                                 if (err) {
-                                    return db.rollback(() => {
-                                        console.error('Error committing transaction:', err);
+                                    return connection.rollback(() => {
+                                        connection.release();
+                                        console.error('Error inserting new Thai codes:', err);
                                         res.status(500).send('Internal Server Error');
                                     });
                                 }
-                                res.json({ message: 'User Thai entry updated successfully!' });
-                            });
-                        }
-                    );
-                });
-            }
-        );
+
+                                connection.commit((err) => {
+                                    if (err) {
+                                        return connection.rollback(() => {
+                                            connection.release();
+                                            console.error('Error committing transaction:', err);
+                                            res.status(500).send('Internal Server Error');
+                                        });
+                                    }
+                                    connection.release();
+                                    res.json({ message: 'User Thai entry updated successfully!' });
+                                });
+                            }
+                        );
+                    });
+                }
+            );
+        });
     });
 }
 
@@ -207,42 +222,56 @@ const getAdminThaiCode = (req, res) => {
 const deleteUserThaiEntry = (req, res) => {
     const entryId = req.params.id;
     
-    db.beginTransaction((err) => {
+    db.getConnection((err, connection) => {
         if (err) {
-            console.error('Transaction error:', err);
-            return res.status(500).json({ message: 'Error starting transaction', error: err.message });
+            console.error('Error getting connection from pool:', err);
+            return res.status(500).json({ message: 'Database connection error', error: err.message });
         }
 
-        db.query('DELETE FROM user_thaicode WHERE entry_id = ?', [entryId], (err) => {
+        // Start a transaction
+        connection.beginTransaction((err) => {
             if (err) {
-                console.error('Error deleting Thai codes:', err);
-                return db.rollback(() => {
-                    res.status(500).json({ message: 'Error deleting associated Thai codes', error: err.message });
-                });
+                connection.release();
+                console.error('Transaction error:', err);
+                return res.status(500).json({ message: 'Error starting transaction', error: err.message });
             }
 
-            db.query('DELETE FROM user_thaientrie WHERE id = ?', [entryId], (err, result) => {
+            connection.query('DELETE FROM user_thaicode WHERE entry_id = ?', [entryId], (err) => {
                 if (err) {
-                    console.error('Error deleting Thai entry:', err);
-                    return db.rollback(() => {
-                        res.status(500).json({ message: 'Error deleting Thai entry', error: err.message });
+                    console.error('Error deleting Thai codes:', err);
+                    return connection.rollback(() => {
+                        connection.release();
+                        res.status(500).json({ message: 'Error deleting associated Thai codes', error: err.message });
                     });
                 }
 
-                if (result.affectedRows === 0) {
-                    return db.rollback(() => {
-                        res.status(403).json({ message: 'You are not authorized to delete this entry' });
-                    });
-                }
-
-                db.commit((err) => {
+                connection.query('DELETE FROM user_thaientrie WHERE id = ?', [entryId], (err, result) => {
                     if (err) {
-                        console.error('Commit error:', err);
-                        return db.rollback(() => {
-                            res.status(500).json({ message: 'Error committing transaction', error: err.message });
+                        console.error('Error deleting Thai entry:', err);
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(500).json({ message: 'Error deleting Thai entry', error: err.message });
                         });
                     }
-                    res.status(200).json({ message: 'Thai entry and associated codes deleted successfully' });
+
+                    if (result.affectedRows === 0) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            res.status(403).json({ message: 'You are not authorized to delete this entry' });
+                        });
+                    }
+
+                    connection.commit((err) => {
+                        if (err) {
+                            console.error('Commit error:', err);
+                            return connection.rollback(() => {
+                                connection.release();
+                                res.status(500).json({ message: 'Error committing transaction', error: err.message });
+                            });
+                        }
+                        connection.release();
+                        res.status(200).json({ message: 'Thai entry and associated codes deleted successfully' });
+                    });
                 });
             });
         });
